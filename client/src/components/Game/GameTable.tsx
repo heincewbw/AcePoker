@@ -797,9 +797,9 @@ export default function GameTable() {
                 const pos = SEAT_POSITIONS[player.displaySeat % SEAT_POSITIONS.length];
                 const sx = parseFloat(pos.left);
                 const sy = parseFloat(pos.top);
-                // 42% toward center — keeps token inside the oval
-                const tx = (sx + (50 - sx) * 0.42).toFixed(1);
-                const ty = (sy + (50 - sy) * 0.42).toFixed(1);
+                // 65% toward center — keeps token clear of the seat's hole cards
+                const tx = (sx + (50 - sx) * 0.65).toFixed(1);
+                const ty = (sy + (50 - sy) * 0.65).toFixed(1);
                 const cfg = label === 'D'
                   ? { c1: '#f5f5f5', c2: '#c0c0c0', notch: 'rgba(0,0,0,0.25)', text: '#111111', fs: 14, sz: 36 }
                   : label === 'SB'

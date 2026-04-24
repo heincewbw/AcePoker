@@ -423,26 +423,6 @@ export default function PlayerSeat({ player, isCurrentTurn, isWinner, gameState,
           </div>
         )}
 
-        {/* SB / BB chip badges on avatar (secondary indicator) */}
-        {player.isSmallBlind && !player.isDealer && (
-          <div
-            className="absolute z-10 animate-chipSpin"
-            style={{ bottom: -6, right: -6 }}
-            title="Small Blind"
-          >
-            <DealerChip label="SB" color1="#60a5fa" color2="#1d4ed8" textColor="#fff" />
-          </div>
-        )}
-        {player.isBigBlind && !player.isSmallBlind && (
-          <div
-            className="absolute z-10 animate-chipSpin"
-            style={{ bottom: -6, right: -6 }}
-            title="Big Blind"
-          >
-            <DealerChip label="BB" color1="#f87171" color2="#991b1b" textColor="#fff" />
-          </div>
-        )}
-
         {/* All-in badge */}
         {player.isAllIn && (
           <div

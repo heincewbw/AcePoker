@@ -2,6 +2,9 @@
   "name": "acepoker",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "workspaces": [
     "client",
     "server"

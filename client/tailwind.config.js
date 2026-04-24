@@ -105,10 +105,11 @@ export default {
         },
         // Chip flies from pot → winner seat
         chipFlyFromCenter: {
-          '0%':   { transform: 'translate(0px, 0px) scale(0.5)', opacity: '0' },
-          '10%':  { opacity: '1', transform: 'translate(calc(var(--fx) * 0.08), calc(var(--fy) * 0.08)) scale(1.6)' },
-          '70%':  { opacity: '1', transform: 'translate(var(--fx), var(--fy)) scale(1.1)' },
-          '100%': { opacity: '0', transform: 'translate(var(--fx), var(--fy)) scale(0.6)' },
+          '0%':   { transform: 'translate(0px, 0px) scale(0.4)', opacity: '0' },
+          '8%':   { opacity: '1', transform: 'translate(calc(var(--fx) * 0.06), calc(var(--fy) * 0.06)) scale(1.8)' },
+          '60%':  { opacity: '1', transform: 'translate(calc(var(--fx) * 0.92), calc(var(--fy) * 0.92)) scale(1.15)' },
+          '80%':  { opacity: '0.8', transform: 'translate(var(--fx), var(--fy)) scale(1.05)' },
+          '100%': { opacity: '0', transform: 'translate(var(--fx), var(--fy)) scale(0.5)' },
         },
         // Moving felt sheen
         feltSheen: {
@@ -137,7 +138,7 @@ export default {
         chipSpin: 'chipSpin 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         thinkDot: 'thinkDot 1.4s ease-in-out infinite',
         chipFlyToCenter: 'chipFlyToCenter 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-        chipFlyFromCenter: 'chipFlyFromCenter 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+        chipFlyFromCenter: 'chipFlyFromCenter 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards',
         feltSheen: 'feltSheen 9s ease-in-out infinite',
       },
     },

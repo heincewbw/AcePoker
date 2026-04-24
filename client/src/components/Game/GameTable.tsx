@@ -248,18 +248,20 @@ export default function GameTable() {
     const displaySeat = (winner.seatIndex - selfSeat + (tableInfo?.maxPlayers ?? 9)) % (tableInfo?.maxPlayers ?? 9);
     const { x, y } = getSeatOffset(displaySeat);
 
-    const CHIP_COUNT = 18;
-    const palette = ['#f0c040', '#fde68a', '#4ade80', '#f0c040', '#fbbf24', '#f0c040'];
+    const CHIP_COUNT = 28;
+    const palette = ['#f0c040', '#fde68a', '#4ade80', '#f0c040', '#fbbf24', '#f0c040', '#facc15', '#86efac'];
     const newFlies = Array.from({ length: CHIP_COUNT }, (_, i) => ({
       id: ++chipIdRef.current,
-      fromX: x + (Math.random() - 0.5) * 50,
-      fromY: y + (Math.random() - 0.5) * 32,
+      fromX: x + (Math.random() - 0.5) * 80,
+      fromY: y + (Math.random() - 0.5) * 50,
       toWinner: true,
       color: palette[i % palette.length],
-      delay: i * 55,
+      delay: i * 80,
     }));
     setChipFlies(prev => [...prev, ...newFlies]);
-    setTimeout(() => setChipFlies(prev => prev.filter(f => !newFlies.find(n => n.id === f.id))), 2400);
+    // lifetime = last chip start (CHIP_COUNT-1)*80 ms + animation duration 2.4 s + buffer
+    const totalMs = (CHIP_COUNT - 1) * 80 + 2400 + 400;
+    setTimeout(() => setChipFlies(prev => prev.filter(f => !newFlies.find(n => n.id === f.id))), totalMs);
   }, [showWinner]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleJoin = () => {
@@ -302,30 +304,53 @@ export default function GameTable() {
     if (!tableId) return;
     sendAction(tableId, action, amount);
     lastActivityRef.current = Date.now();
+    setIsSittingOut(false);
+    sitOutStartRef.current = null;
+    setShowInactiveWarn(false);
   };
 
-  // Auto-leave after 2 minutes of inactivity (missed turns / sitting out).
-  // Any action by the player resets the inactivity timer.
+  // Inactivity flow:
+  //   0–2 min  : playing normally
+  //   2 min    : sit-out (folded from hands automatically, warning shown)
+  //   2–5 min  : sitting out, countdown shown
+  //   5 min    : auto-leave table
   const lastActivityRef = useRef<number>(Date.now());
   const [showInactiveWarn, setShowInactiveWarn] = useState(false);
+  const [isSittingOut, setIsSittingOut] = useState(false);
+  const sitOutStartRef = useRef<number | null>(null);
+
+  const INACTIVE_SITOUT_MS = 2 * 60 * 1000;  // 2 min → sit out
+  const SITOUT_LEAVE_MS   = 3 * 60 * 1000;  // 3 min sitting out → leave
+  const WARN_BEFORE_MS    = 30 * 1000;       // warn 30 s before sit-out
+
   useEffect(() => {
     if (!hasJoined) return;
-    const INACTIVITY_MS = 2 * 60 * 1000; // 2 minutes
-    const WARN_MS = INACTIVITY_MS - 30 * 1000; // warn 30s before
     const interval = setInterval(() => {
       const idle = Date.now() - lastActivityRef.current;
-      if (idle >= INACTIVITY_MS) {
-        clearInterval(interval);
-        toast.error('Removed from table: inactive for 2 minutes');
-        handleLeave();
-      } else if (idle >= WARN_MS) {
-        setShowInactiveWarn(true);
+
+      if (!isSittingOut) {
+        if (idle >= INACTIVE_SITOUT_MS) {
+          setIsSittingOut(true);
+          sitOutStartRef.current = Date.now();
+          toast('Sitting out due to inactivity — you will leave in 3 minutes', {
+            icon: '💤', duration: 6000,
+          });
+        } else if (idle >= INACTIVE_SITOUT_MS - WARN_BEFORE_MS) {
+          setShowInactiveWarn(true);
+        } else {
+          setShowInactiveWarn(false);
+        }
       } else {
-        setShowInactiveWarn(false);
+        const sittingMs = Date.now() - (sitOutStartRef.current ?? Date.now());
+        if (sittingMs >= SITOUT_LEAVE_MS) {
+          clearInterval(interval);
+          toast.error('Left table after 3 minutes of sitting out');
+          handleLeave();
+        }
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [hasJoined]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hasJoined, isSittingOut]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const handleSendChat = (e: React.FormEvent) => {
@@ -500,13 +525,21 @@ export default function GameTable() {
               <span className="md:hidden">Leave next</span>
             </label>
           )}
-          {showInactiveWarn && (
+          {isSittingOut && (
+            <span
+              className="text-xs animate-pulse"
+              style={{ color: '#f87171' }}
+            >
+              💤 Sitting out — leaving in 3 min
+            </span>
+          )}
+          {!isSittingOut && showInactiveWarn && (
             <span
               className="text-xs animate-pulse"
               style={{ color: '#fbbf24' }}
               title="You will be removed from the table soon due to inactivity"
             >
-              ⚠ Inactive — auto-leave soon
+              ⚠ Inactive — sitting out soon
             </span>
           )}
           <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
@@ -686,7 +719,7 @@ export default function GameTable() {
                     ['--fx' as string]: `${fly.fromX}px`,
                     ['--fy' as string]: `${fly.fromY}px`,
                     animation: fly.toWinner
-                      ? `chipFlyFromCenter 1.15s ${fly.delay}ms cubic-bezier(0.34,1.4,0.64,1) both`
+                      ? `chipFlyFromCenter 2.4s ${fly.delay}ms cubic-bezier(0.22,1,0.36,1) both`
                       : `chipFlyToCenter 0.7s ${fly.delay}ms cubic-bezier(0.4,0,0.2,1) both`,
                   } as React.CSSProperties}
                 />

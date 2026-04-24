@@ -392,6 +392,13 @@ export class PokerGame {
     // First to act after dealer (skip folded/all-in)
     const activePlayers = this.getActivePlayers();
 
+    // If only one (or zero) player remains — everyone else folded —
+    // end the hand immediately without dealing further community cards.
+    if (activePlayers.length <= 1) {
+      this.showdown();
+      return;
+    }
+
     switch (this.state.phase) {
       case 'preflop':
         this.state.communityCards.push(...this.deck.deal(3)); // flop
@@ -408,11 +415,6 @@ export class PokerGame {
       case 'river':
         this.showdown();
         return;
-    }
-
-    if (activePlayers.length <= 1) {
-      this.showdown();
-      return;
     }
 
     // Position after dealer

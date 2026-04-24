@@ -37,6 +37,7 @@ export interface GamePlayer {
   isFolded: boolean;
   isAllIn: boolean;
   isActive: boolean;
+  isSittingOut: boolean;
   seatIndex: number;
   isDealer: boolean;
   isSmallBlind: boolean;
@@ -158,6 +159,7 @@ export class PokerGame {
       isFolded: false,
       isAllIn: false,
       isActive: true,
+      isSittingOut: false,
       seatIndex,
       isDealer: false,
       isSmallBlind: false,
@@ -168,6 +170,15 @@ export class PokerGame {
     this.state.players.sort((a, b) => a.seatIndex - b.seatIndex);
     this.emit();
     return true;
+  }
+
+  /** Mark a player as sitting out — they will be skipped when the next hand is dealt. */
+  setSitOut(userId: string, value: boolean): void {
+    const player = this.state.players.find(p => p.userId === userId);
+    if (player) {
+      player.isSittingOut = value;
+      this.emit();
+    }
   }
 
   removePlayer(userId: string): void {
@@ -208,7 +219,7 @@ export class PokerGame {
   }
 
   canStartGame(): boolean {
-    const activePlayers = this.state.players.filter(p => p.isActive && p.chips >= this.state.bigBlind);
+    const activePlayers = this.state.players.filter(p => p.isActive && !p.isSittingOut && p.chips >= this.state.bigBlind);
     return activePlayers.length >= 2 && ['waiting', 'finished'].includes(this.state.phase);
   }
 
@@ -248,7 +259,7 @@ export class PokerGame {
     this.state.currentBet = 0;
     this.state.winners = undefined;
 
-    const activePlayers = this.state.players.filter(p => p.isActive && p.chips > 0);
+    const activePlayers = this.state.players.filter(p => p.isActive && !p.isSittingOut && p.chips > 0);
 
     // Rotate dealer
     if (this.state.roundNumber > 1) {

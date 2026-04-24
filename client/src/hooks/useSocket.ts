@@ -170,6 +170,12 @@ export function useSocket() {
     sendChat: (tableId: string, message: string) => {
       socket?.emit('chat:message', { tableId, message });
     },
+    sitOut: (tableId: string) => {
+      socket?.emit('player:sitout', { tableId });
+    },
+    returnFromSitOut: (tableId: string) => {
+      socket?.emit('player:return', { tableId });
+    },
     isConnected: socket?.connected ?? false,
   };
 }

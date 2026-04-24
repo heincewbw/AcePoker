@@ -90,7 +90,7 @@ export default function GameTable() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuthStore();
   const { gameState, chatMessages, showWinner, setCurrentTableId, clearGame } = useGameStore();
-  const { joinTable, leaveTable, sendAction, sendChat, isConnected } = useSocket();
+  const { joinTable, leaveTable, sendAction, sendChat, sitOut, returnFromSitOut, isConnected } = useSocket();
 
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [buyInModal, setBuyInModal] = useState(true);
@@ -313,6 +313,9 @@ export default function GameTable() {
     if (!tableId) return;
     sendAction(tableId, action, amount);
     lastActivityRef.current = Date.now();
+    if (isSittingOutRef.current) {
+      returnFromSitOut(tableId);
+    }
     isSittingOutRef.current = false;
     setIsSittingOut(false);
     sitOutStartRef.current = null;
@@ -345,6 +348,7 @@ export default function GameTable() {
           isSittingOutRef.current = true;
           setIsSittingOut(true);
           sitOutStartRef.current = Date.now();
+          if (tableId) sitOut(tableId);
           toast('Sitting out due to inactivity — you will leave in 3 minutes', {
             icon: '💤', duration: 6000,
           });
@@ -546,6 +550,7 @@ export default function GameTable() {
                 sitOutStartRef.current = null;
                 lastActivityRef.current = Date.now();
                 setShowInactiveWarn(false);
+                if (tableId) returnFromSitOut(tableId);
                 toast.success('Welcome back!', { duration: 2000 });
               }}
               className="text-xs px-3 py-1 rounded-lg animate-pulse"
@@ -863,6 +868,7 @@ export default function GameTable() {
                     isSittingOutRef.current = true;
                     setIsSittingOut(true);
                     sitOutStartRef.current = Date.now();
+                    if (tableId) sitOut(tableId);
                     toast('Sitting out — click any action to return', { icon: '💤', duration: 4000 });
                   } : undefined}
                 />

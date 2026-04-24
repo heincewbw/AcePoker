@@ -1,7 +1,18 @@
 import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { X, Trophy, TrendingDown, ChevronLeft, ChevronRight, Clock, Users, Coins } from 'lucide-react';
+import { X, Trophy, TrendingDown, ChevronLeft, ChevronRight, ChevronDown, Clock, Users, Coins } from 'lucide-react';
 import api from '../../utils/api';
+
+interface HandEvent {
+  type: 'blind' | 'action' | 'phase';
+  phase: string;
+  userId?: string;
+  username?: string;
+  action?: string;
+  amount?: number;
+  cards?: Array<{ suit: string; rank: string }>;
+  ts?: number;
+}
 
 interface GameRow {
   id: string;
@@ -15,6 +26,7 @@ interface GameRow {
   myWin: number;
   winners_json: Array<{ userId: string; username: string; amount: number; hand?: { description: string } }>;
   community_cards: Array<{ suit: string; rank: string }>;
+  action_history?: HandEvent[];
   ended_at: string;
 }
 
@@ -51,8 +63,36 @@ const formatDate = (iso: string) => {
   return d.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 
+const PHASE_LABEL: Record<string, string> = {
+  preflop: 'Pre-flop',
+  flop:    'Flop',
+  turn:    'Turn',
+  river:   'River',
+};
+
+const ACTION_LABEL: Record<string, string> = {
+  fold:       'folded',
+  check:      'checked',
+  call:       'called',
+  raise:      'raised',
+  allin:      'went all-in',
+  smallBlind: 'posted SB',
+  bigBlind:   'posted BB',
+};
+
+function groupEventsByPhase(events: HandEvent[]) {
+  const phases: Array<{ phase: string; events: HandEvent[] }> = [];
+  const order = ['preflop', 'flop', 'turn', 'river'];
+  for (const p of order) {
+    const evs = events.filter(e => e.phase === p);
+    if (evs.length) phases.push({ phase: p, events: evs });
+  }
+  return phases;
+}
+
 export default function HistoryModal({ onClose }: { onClose: () => void }) {
   const [page, setPage] = useState(1);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const LIMIT = 10;
 
   const { data, isLoading, isError } = useQuery({
@@ -182,6 +222,60 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
                   </div>
                 ))}
               </div>
+
+              {/* Hand history (collapsible) */}
+              {g.action_history && g.action_history.length > 0 && (
+                <div className="mt-1">
+                  <button
+                    onClick={() => setExpanded(e => ({ ...e, [g.id]: !e[g.id] }))}
+                    className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-yellow-400 transition-colors"
+                  >
+                    <ChevronDown
+                      className="w-3 h-3 transition-transform"
+                      style={{ transform: expanded[g.id] ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+                    />
+                    {expanded[g.id] ? 'Hide' : 'Show'} hand history ({g.action_history.length} events)
+                  </button>
+                  {expanded[g.id] && (
+                    <div
+                      className="mt-2 rounded-lg px-3 py-2 space-y-1.5 text-[11px]"
+                      style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }}
+                    >
+                      {groupEventsByPhase(g.action_history).map(({ phase, events }) => (
+                        <div key={phase}>
+                          <div className="text-yellow-500 font-semibold uppercase tracking-wider text-[10px] mb-0.5">
+                            {PHASE_LABEL[phase] ?? phase}
+                          </div>
+                          <div className="space-y-0.5 ml-2">
+                            {events.map((ev, idx) => {
+                              if (ev.type === 'phase') {
+                                return (
+                                  <div key={idx} className="flex items-center gap-1.5 text-gray-400">
+                                    <span>→ Dealt:</span>
+                                    {ev.cards?.map((c, i) => (
+                                      <MiniCard key={i} suit={c.suit} rank={c.rank} />
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              const label = ev.action ? ACTION_LABEL[ev.action] ?? ev.action : '';
+                              return (
+                                <div key={idx} className="text-gray-300">
+                                  <span className="text-indigo-300">{ev.username}</span>{' '}
+                                  <span className="text-gray-400">{label}</span>
+                                  {ev.amount != null && ev.action !== 'fold' && ev.action !== 'check' && (
+                                    <span className="text-yellow-400 ml-1">{formatChips(ev.amount)}</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

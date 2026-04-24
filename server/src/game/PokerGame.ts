@@ -5,6 +5,26 @@ import { HandResult, determineWinners } from './HandEvaluator';
 export type GamePhase = 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'finished';
 export type PlayerAction = 'fold' | 'check' | 'call' | 'raise' | 'allin';
 
+/**
+ * Immutable log of everything that happened during a hand, in order.
+ * Persisted to `games.action_history` on showdown for audit / replay.
+ */
+export interface HandEvent {
+  /**
+   * - `blind`:  small/big blind posted
+   * - `action`: player voluntary action (fold/check/call/raise/allin)
+   * - `phase`:  community cards dealt (flop/turn/river) OR showdown reached
+   */
+  type: 'blind' | 'action' | 'phase';
+  phase: GamePhase;        // phase the event occurred in
+  userId?: string;
+  username?: string;
+  action?: PlayerAction | 'smallBlind' | 'bigBlind';
+  amount?: number;
+  cards?: Card[];          // cards revealed on phase events
+  ts: number;              // epoch ms
+}
+
 export interface GamePlayer {
   id: string;
   userId: string;
@@ -49,6 +69,7 @@ export interface GameState {
   roundNumber: number;
   winners?: Array<{ playerId: string; amount: number; hand?: HandResult }>;
   lastAction?: { playerId: string; action: PlayerAction; amount?: number };
+  actionHistory: HandEvent[];
 }
 
 export class PokerGame {
@@ -77,6 +98,7 @@ export class PokerGame {
       currentBet: 0,
       minRaise: bigBlind,
       roundNumber: 0,
+      actionHistory: [],
     };
   }
 
@@ -204,6 +226,7 @@ export class PokerGame {
     this.state.roundNumber++;
     this.deck.reset();
     this.deck.shuffle();
+    this.state.actionHistory = [];
 
     // Reset player states
     for (const player of this.state.players) {
@@ -250,6 +273,18 @@ export class PokerGame {
 
     this.state.currentBet = this.state.bigBlind;
     this.state.minRaise = this.state.bigBlind * 2;
+
+    // Log blinds into hand history
+    this.state.actionHistory.push({
+      type: 'blind', phase: 'preflop',
+      userId: sbPlayer.userId, username: sbPlayer.username,
+      action: 'smallBlind', amount: this.state.smallBlind, ts: Date.now(),
+    });
+    this.state.actionHistory.push({
+      type: 'blind', phase: 'preflop',
+      userId: bbPlayer.userId, username: bbPlayer.username,
+      action: 'bigBlind', amount: this.state.bigBlind, ts: Date.now(),
+    });
 
     // Deal hole cards
     for (let i = 0; i < 2; i++) {
@@ -330,6 +365,20 @@ export class PokerGame {
     }
 
     this.state.lastAction = { playerId: currentPlayer.id, action, amount };
+
+    // Log to hand history (user-visible actions only; blinds are pushed
+    // separately when posted).
+    this.state.actionHistory.push({
+      type: 'action',
+      phase: this.state.phase,
+      userId: currentPlayer.userId,
+      username: currentPlayer.username,
+      action: currentPlayer.lastAction,
+      amount: (action === 'raise' || action === 'call' || action === 'allin')
+        ? currentPlayer.currentBet
+        : undefined,
+      ts: Date.now(),
+    });
 
     // Check if round is over
     if (this.isRoundComplete()) {
@@ -413,18 +462,27 @@ export class PokerGame {
     }
 
     switch (this.state.phase) {
-      case 'preflop':
-        this.state.communityCards.push(...this.deck.deal(3)); // flop
+      case 'preflop': {
+        const cards = this.deck.deal(3);
+        this.state.communityCards.push(...cards); // flop
         this.state.phase = 'flop';
+        this.state.actionHistory.push({ type: 'phase', phase: 'flop', cards, ts: Date.now() });
         break;
-      case 'flop':
-        this.state.communityCards.push(this.deck.dealOne()); // turn
+      }
+      case 'flop': {
+        const card = this.deck.dealOne();
+        this.state.communityCards.push(card); // turn
         this.state.phase = 'turn';
+        this.state.actionHistory.push({ type: 'phase', phase: 'turn', cards: [card], ts: Date.now() });
         break;
-      case 'turn':
-        this.state.communityCards.push(this.deck.dealOne()); // river
+      }
+      case 'turn': {
+        const card = this.deck.dealOne();
+        this.state.communityCards.push(card); // river
         this.state.phase = 'river';
+        this.state.actionHistory.push({ type: 'phase', phase: 'river', cards: [card], ts: Date.now() });
         break;
+      }
       case 'river':
         this.showdown();
         return;

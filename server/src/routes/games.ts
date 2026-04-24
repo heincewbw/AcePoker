@@ -17,7 +17,7 @@ router.get('/history', async (req: AuthRequest, res: Response) => {
 
     const { data, error, count } = await supabase
       .from('games')
-      .select('id, table_id, round_number, small_blind, big_blind, pot, player_ids, winner_ids, winners_json, community_cards, started_at, ended_at', { count: 'exact' })
+      .select('id, table_id, round_number, small_blind, big_blind, pot, player_ids, winner_ids, winners_json, community_cards, action_history, started_at, ended_at', { count: 'exact' })
       .contains('player_ids', [req.user!.id])
       .order('ended_at', { ascending: false })
       .range((page - 1) * limit, page * limit - 1);

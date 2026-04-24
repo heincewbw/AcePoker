@@ -38,6 +38,7 @@ export async function recordGame(state: GameState, startedAt?: Date): Promise<vo
       winner_ids:      winnerIds,
       winners_json:    winnersJson,
       community_cards: state.communityCards,
+      action_history:  state.actionHistory ?? [],
       started_at:      startedAt?.toISOString() ?? null,
     });
     if (error) {

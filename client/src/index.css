@@ -1,0 +1,503 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    @apply text-white font-sans;
+    background: #0f0307;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #1a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #6b1a1a; border-radius: 3px; }
+}
+
+@layer components {
+
+  /* ──────────────────────────────────────
+     ATMOSPHERIC BACKGROUND
+  ────────────────────────────────────── */
+  .game-bg {
+    background:
+      radial-gradient(ellipse 60% 40% at 18% 25%, rgba(120, 50, 12, 0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 35% at 82% 75%, rgba(100, 30, 10, 0.20) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 90%, rgba(60, 15, 5, 0.30) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 80% at 50% 50%, #1a0608 0%, #0a0205 70%, #060102 100%);
+    min-height: 100vh;
+  }
+
+  /* ──────────────────────────────────────
+     ZYNGA-STYLE POKER TABLE
+  ────────────────────────────────────── */
+  .poker-table-rail {
+    border-radius: 50%;
+    background:
+      /* Wood grain — fine vertical lines */
+      repeating-linear-gradient(
+        91deg,
+        transparent 0px, transparent 2px,
+        rgba(0, 0, 0, 0.04) 2px, rgba(0, 0, 0, 0.04) 3px,
+        transparent 3px, transparent 7px,
+        rgba(255, 160, 60, 0.025) 7px, rgba(255, 160, 60, 0.025) 8px
+      ),
+      /* Wood grain — coarser bands */
+      repeating-linear-gradient(
+        88deg,
+        transparent 0px, transparent 18px,
+        rgba(0, 0, 0, 0.05) 18px, rgba(0, 0, 0, 0.05) 19px,
+        transparent 19px, transparent 38px,
+        rgba(255, 200, 80, 0.03) 38px, rgba(255, 200, 80, 0.03) 39px
+      ),
+      /* Warm highlights */
+      radial-gradient(ellipse 55% 35% at 28% 22%, rgba(200, 120, 50, 0.3) 0%, transparent 55%),
+      radial-gradient(ellipse 45% 30% at 72% 75%, rgba(80, 35, 8, 0.45) 0%, transparent 55%),
+      /* Base wood tone */
+      radial-gradient(ellipse at 50% 0%, #9b5e2e 0%, #7b4020 22%, #5c2c10 50%, #3a1a08 80%, #2a1005 100%);
+    box-shadow:
+      0 28px 80px rgba(0, 0, 0, 0.95),
+      0 8px 32px rgba(0, 0, 0, 0.7),
+      inset 0 2px 6px rgba(255, 200, 100, 0.10),
+      inset 0 -4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .poker-table-gold {
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+      #f0c040 0%, #c9a227 20%, #e8b830 40%,
+      #8b6e1a 55%, #c9a227 70%, #f0c040 85%, #c9a227 100%);
+  }
+
+  .poker-table-felt {
+    border-radius: 50%;
+    background:
+      /* Overhead spotlight — bright centre */
+      radial-gradient(ellipse 55% 44% at 50% 42%, rgba(255, 255, 255, 0.07) 0%, transparent 68%),
+      /* Secondary softer lamp */
+      radial-gradient(ellipse 35% 28% at 50% 38%, rgba(180, 255, 180, 0.04) 0%, transparent 55%),
+      /* Felt base */
+      radial-gradient(ellipse 65% 55% at 50% 35%, #2a7535 0%, #1e5c28 40%, #145020 65%, #0d3318 100%);
+    box-shadow:
+      inset 0 0 120px rgba(0, 0, 0, 0.6),
+      inset 0 0 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+
+  /* Center logo watermark */
+  .table-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0.04;
+    font-size: 200px;
+    line-height: 1;
+    color: #c9a227;
+    user-select: none;
+  }
+
+  /* ──────────────────────────────────────
+     PLAYING CARDS
+  ────────────────────────────────────── */
+  .card-face {
+    background: linear-gradient(160deg, #ffffff 0%, #f8f8f8 100%);
+    border: 1.5px solid #e0e0e0;
+    border-radius: 7px;
+    box-shadow:
+      3px 3px 10px rgba(0, 0, 0, 0.45),
+      1px 1px 3px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    font-family: 'Georgia', serif;
+    perspective: 400px;
+  }
+
+  .card-back {
+    border-radius: 7px;
+    box-shadow:
+      3px 3px 10px rgba(0, 0, 0, 0.45),
+      1px 1px 3px rgba(0, 0, 0, 0.3);
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 5px,
+        rgba(201, 162, 39, 0.22) 5px,
+        rgba(201, 162, 39, 0.22) 6px
+      ),
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 5px,
+        rgba(201, 162, 39, 0.22) 5px,
+        rgba(201, 162, 39, 0.22) 6px
+      ),
+      #7b0000;
+    border: 2px solid #c9a227;
+  }
+
+  .card-red { color: #cc0000; }
+  .card-black { color: #111111; }
+
+  /* Card placeholder slot */
+  .card-slot {
+    border-radius: 7px;
+    border: 2px dashed rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  /* ──────────────────────────────────────
+     CHIPS
+  ────────────────────────────────────── */
+  .chip {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  .chip-gold {
+    background: linear-gradient(135deg, #d4aa2a, #a07e1c);
+    color: #fff;
+    border: 1px solid rgba(255, 220, 80, 0.4);
+  }
+
+  .chip-blue {
+    background: linear-gradient(135deg, #1a62a8, #0e3d6e);
+    color: #fff;
+    border: 1px solid rgba(80, 160, 255, 0.3);
+  }
+
+  /* Bet badge (B $500K style like Zynga) */
+  .bet-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold;
+    background: linear-gradient(135deg, #1a5fa8, #0d3d70);
+    border: 1.5px solid rgba(100, 180, 255, 0.5);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /* ──────────────────────────────────────
+     PLAYER SEAT
+  ────────────────────────────────────── */
+  .player-seat {
+    transition: all 0.3s ease;
+  }
+
+  .avatar-ring-active {
+    box-shadow:
+      0 0 0 3px #f0c040,
+      0 0 20px rgba(240, 192, 64, 0.8),
+      0 0 40px rgba(240, 192, 64, 0.4);
+  }
+
+  .avatar-ring-winner {
+    box-shadow:
+      0 0 0 3px #4ade80,
+      0 0 24px rgba(74, 222, 128, 0.9),
+      0 0 48px rgba(74, 222, 128, 0.4);
+  }
+
+  .avatar-ring-idle {
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.12),
+      0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
+  /* ──────────────────────────────────────
+     ZYNGA-STYLE ACTION BUTTONS
+  ────────────────────────────────────── */
+  .zynga-btn-fold {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e03030, #900000);
+    border: 3px solid rgba(255, 100, 100, 0.6);
+    box-shadow:
+      0 6px 20px rgba(144, 0, 0, 0.7),
+      0 2px 4px rgba(0, 0, 0, 0.5),
+      inset 0 2px 4px rgba(255, 120, 120, 0.3);
+    color: white;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .zynga-btn-fold:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 10px 28px rgba(144, 0, 0, 0.9), inset 0 2px 4px rgba(255, 120, 120, 0.4);
+  }
+  .zynga-btn-fold:active { transform: scale(0.96); }
+
+  .zynga-btn-check {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #20b870, #0d7a45);
+    border: 3px solid rgba(80, 220, 140, 0.6);
+    box-shadow:
+      0 6px 20px rgba(13, 122, 69, 0.7),
+      0 2px 4px rgba(0, 0, 0, 0.5),
+      inset 0 2px 4px rgba(80, 220, 140, 0.3);
+    color: white;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .zynga-btn-check:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 10px 28px rgba(13, 122, 69, 0.9), inset 0 2px 4px rgba(80, 220, 140, 0.4);
+  }
+  .zynga-btn-check:active { transform: scale(0.96); }
+
+  .zynga-btn-bet {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8b830, #9a7315);
+    border: 3px solid rgba(240, 200, 80, 0.6);
+    box-shadow:
+      0 6px 20px rgba(154, 115, 21, 0.7),
+      0 2px 4px rgba(0, 0, 0, 0.5),
+      inset 0 2px 4px rgba(240, 200, 80, 0.3);
+    color: white;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .zynga-btn-bet:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 10px 28px rgba(154, 115, 21, 0.9), inset 0 2px 4px rgba(240, 200, 80, 0.4);
+  }
+  .zynga-btn-bet:active { transform: scale(0.96); }
+
+  .zynga-btn-allin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #9b30e0, #5c0895);
+    border: 3px solid rgba(180, 80, 255, 0.6);
+    box-shadow:
+      0 6px 20px rgba(92, 8, 149, 0.7),
+      inset 0 2px 4px rgba(180, 80, 255, 0.3);
+    color: white;
+    font-weight: 700;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .zynga-btn-allin:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 10px 28px rgba(92, 8, 149, 0.9);
+  }
+  .zynga-btn-allin:active { transform: scale(0.96); }
+
+  /* Quick raise pills */
+  .raise-pill {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1.5px solid rgba(201, 162, 39, 0.4);
+    color: #f0c040;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .raise-pill:hover {
+    border-color: #f0c040;
+    background: rgba(201, 162, 39, 0.15);
+    transform: translateY(-1px);
+  }
+  .raise-pill.active {
+    background: rgba(201, 162, 39, 0.25);
+    border-color: #f0c040;
+  }
+
+  /* ──────────────────────────────────────
+     POT & PHASE DISPLAY
+  ────────────────────────────────────── */
+  .pot-display {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.18), rgba(201, 162, 39, 0.08));
+    border: 1.5px solid rgba(201, 162, 39, 0.45);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    color: #f0c040;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .phase-prompt {
+    font-family: 'Cinzel', serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #ffffff;
+    text-shadow:
+      0 0 20px rgba(240, 192, 64, 0.5),
+      0 2px 6px rgba(0, 0, 0, 0.9);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Winner announcement */
+  .winner-banner {
+    background: linear-gradient(135deg, #f0c040, #c9a227, #e8b830, #c9a227, #f0c040);
+    background-size: 300% 300%;
+    animation: shimmer 2s linear infinite, winnerBanner 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(201, 162, 39, 0.6);
+  }
+
+  /* ──────────────────────────────────────
+     HEADER BAR
+  ────────────────────────────────────── */
+  .game-header {
+    background: linear-gradient(180deg, rgba(10, 2, 5, 0.95) 0%, rgba(10, 2, 5, 0.80) 100%);
+    border-bottom: 1px solid rgba(201, 162, 39, 0.2);
+    backdrop-filter: blur(8px);
+  }
+
+  /* ──────────────────────────────────────
+     GLASS PANELS (MODALS, CHAT)
+  ────────────────────────────────────── */
+  .glass-panel {
+    background: rgba(14, 4, 8, 0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(201, 162, 39, 0.22);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  /* ──────────────────────────────────────
+     INPUTS
+  ────────────────────────────────────── */
+  .input-poker {
+    @apply w-full bg-black/50 border border-yellow-900 rounded-lg px-4 py-3 text-white placeholder-gray-500;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-poker:focus {
+    border-color: #c9a227;
+    box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2);
+  }
+
+  /* ──────────────────────────────────────
+     LOBBY & NAV
+  ────────────────────────────────────── */
+  .nav-link {
+    @apply text-gray-300 hover:text-yellow-400 transition-colors font-medium px-3 py-2 rounded-lg;
+  }
+  .nav-link.active {
+    @apply text-yellow-400 bg-yellow-900/20;
+  }
+
+  .table-card {
+    background: linear-gradient(135deg, #1a0a0a, #2d1010);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    border-radius: 14px;
+    transition: all 0.3s;
+  }
+  .table-card:hover {
+    border-color: rgba(201, 162, 39, 0.65);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(201, 162, 39, 0.2);
+  }
+
+  /* USDT badge */
+  .usdt-badge {
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-bold;
+    background: linear-gradient(135deg, #26a17b, #1a6e52);
+    color: white;
+    border: 1px solid #26a17b;
+  }
+
+  /* Dealer button */
+  .dealer-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffffff, #e0e0e0);
+    border: 2px solid #c9a227;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+    font-size: 10px;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  .sb-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1a44a8);
+    border: 2px solid #60a5fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 8px;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  .bb-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #4c1d95);
+    border: 2px solid #a78bfa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 8px;
+    font-weight: 900;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Sound toggle */
+  .sound-btn {
+    @apply flex items-center justify-center w-9 h-9 rounded-full transition-all;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    color: #c9a227;
+  }
+  .sound-btn:hover {
+    background: rgba(201, 162, 39, 0.15);
+    border-color: #c9a227;
+  }
+}

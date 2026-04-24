@@ -16,11 +16,13 @@ import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
+const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: clientUrl,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -29,7 +31,7 @@ const io = new Server(httpServer, {
 // Security middleware
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: clientUrl,
   credentials: true,
 }));
 app.use(express.json({ limit: '10kb' }));

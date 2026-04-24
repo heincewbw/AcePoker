@@ -835,7 +835,14 @@ export default function GameTable() {
                   gameState={gameState}
                   position={pos}
                   isSelf={player.userId === user?.id}
-                  onAutoFold={player.userId === user?.id ? () => handleAction('fold') : undefined}
+                  onAutoFold={player.userId === user?.id ? () => {
+                    handleAction('fold');
+                    // Immediately enter sit-out so next hands are skipped
+                    // until the player clicks an action themselves.
+                    setIsSittingOut(true);
+                    sitOutStartRef.current = Date.now();
+                    toast('Sitting out — click any action to return', { icon: '💤', duration: 4000 });
+                  } : undefined}
                 />
               );
             })}

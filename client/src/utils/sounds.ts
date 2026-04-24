@@ -146,6 +146,13 @@ class SoundManager {
     this.tone(660, 0.05, 'square', 0.07);
   }
 
+  /** 5-second warning: three sharp beeps to alert the player */
+  timerWarning() {
+    this.tone(880, 0.08, 'square', 0.18);
+    this.tone(880, 0.08, 'square', 0.18, 0.18);
+    this.tone(1100, 0.1, 'square', 0.22, 0.36);
+  }
+
   /** Flop reveal: 3-tone reveal */
   revealFlop() {
     [640, 740, 860].forEach((f, i) => {

@@ -274,6 +274,7 @@ export default function PlayerSeat({ player, isCurrentTurn, isWinner, gameState,
           if (isSelf) onAutoFold?.();
           return 0;
         }
+        if (next === 5 && isSelf) soundManager.timerWarning();
         if (next <= 3 && isSelf) soundManager.urgentTick();
         return next;
       });

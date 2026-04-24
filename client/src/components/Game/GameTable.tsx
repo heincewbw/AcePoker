@@ -133,6 +133,12 @@ export default function GameTable() {
       const occupied: number[] = data.occupiedSeats ?? [];
       const firstFree = [...Array(data.maxPlayers).keys()].find(i => !occupied.includes(i)) ?? 0;
       setSeatIndex(firstFree);
+
+      // Tournaments: auto-join, skip buy-in modal.  Server assigns seat and
+      // starting stack based on tournament registration.
+      if (data.isTournament) {
+        setBuyInModal(false);
+      }
     }).catch(() => {
       toast.error('Table not found');
       navigate('/');
@@ -263,6 +269,14 @@ export default function GameTable() {
     setBuyInModal(false);
     setHasJoined(true);
   };
+
+  // Auto-join tournament tables as soon as tableInfo + socket are ready.
+  // Server ignores buyIn and assigns starting_stack + any free seat.
+  useEffect(() => {
+    if (!tableInfo?.isTournament || !isConnected || hasJoined) return;
+    joinTable(tableInfo.id, 0, seatIndex);
+    setHasJoined(true);
+  }, [tableInfo?.id, tableInfo?.isTournament, isConnected, hasJoined, seatIndex]);
 
   const handleLeave = async () => {
     leaveTable();

@@ -59,6 +59,9 @@ export function setupSocketHandlers(io: Server): void {
     }
     activeUserSockets.set(userId, socket.id);
 
+    // Join per-user room for tournament notifications / targeted events
+    socket.join(`user:${userId}`);
+
     // ----- TABLE EVENTS -----
 
     socket.on('table:join', async ({ tableId, buyIn, seatIndex }) => {
@@ -80,12 +83,79 @@ export function setupSocketHandlers(io: Server): void {
           return;
         }
 
+        const { info } = table;
+
+        // ── TOURNAMENT TABLE ──────────────────────────────────────────────
+        // For tournament tables: user must be registered; buy-in is ignored
+        // (already deducted at registration). Stack = starting_stack from DB.
+        if (info.isTournament && info.tournamentId) {
+          const { data: reg } = await supabase
+            .from('tournament_registrations')
+            .select('id')
+            .eq('tournament_id', info.tournamentId)
+            .eq('user_id', socket.userId)
+            .maybeSingle();
+          if (!reg) {
+            socket.emit('error', { message: 'You are not registered for this tournament' });
+            return;
+          }
+          const { data: tour } = await supabase
+            .from('tournaments')
+            .select('starting_stack, status')
+            .eq('id', info.tournamentId)
+            .single();
+          if (!tour || tour.status === 'finished' || tour.status === 'cancelled') {
+            socket.emit('error', { message: 'Tournament is no longer running' });
+            return;
+          }
+
+          const game = tableManager.getGame(tableId)!;
+          // Idempotent: if already seated, just re-attach socket
+          const existingPlayer = game.getState().players.find(p => p.userId === socket.userId);
+          if (!existingPlayer) {
+            const added = game.addPlayer(
+              socket.userId!,
+              user.username,
+              user.avatar,
+              tour.starting_stack,
+              seatIndex
+            );
+            if (!added) {
+              socket.emit('error', { message: 'Failed to seat you at the tournament' });
+              return;
+            }
+          }
+
+          tableManager.addSocketId(tableId, socket.userId!, socket.id);
+          socket.join(tableId);
+          socket.currentTableId = tableId;
+
+          // Broadcast updated state
+          const state = game.getPublicState();
+          io.to(tableId).emit('game:state', state);
+          io.to(tableId).emit('table:player_joined', { username: user.username });
+
+          // If enough players seated and game still waiting, start the hand
+          if (game.canStartGame()) {
+            // Small delay so all players have a moment to render
+            setTimeout(() => {
+              if (!game.canStartGame()) return;
+              game.setCallbacks(
+                (s) => io.to(tableId).emit('game:state', s),
+                (s) => io.to(tableId).emit('game:ended', s),
+              );
+              game.startGame();
+            }, 3000);
+          }
+          return;
+        }
+
+        // ── REGULAR CASH TABLE ────────────────────────────────────────────
         if (user.chips < buyIn) {
           socket.emit('error', { message: 'Insufficient chips' });
           return;
         }
 
-        const { info } = table;
         if (buyIn < info.minBuyIn || buyIn > info.maxBuyIn) {
           socket.emit('error', {
             message: `Buy-in must be between ${info.minBuyIn} and ${info.maxBuyIn} chips`,
@@ -336,7 +406,25 @@ async function handleLeaveTable(socket: AuthSocket, io: Server): Promise<void> {
       const player = state.players.find(p => p.userId === socket.userId);
 
       if (player) {
-        // ── CHIP LEAK FIX ───────────────────────────────────────────────────
+        const info = tableManager.getTableInfo(tableId);
+        const isTournament = !!info?.isTournament;
+
+        // Tournament tables: do NOT refund stack (those are tournament chips,
+        // not wallet chips). Disconnect-mid-hand just force-folds so play
+        // continues.  For disconnect outside a hand in a tournament, leave
+        // the player seated silently so they can reconnect.
+        if (isTournament) {
+          const isActiveHand = !['waiting', 'finished'].includes(state.phase);
+          if (isActiveHand && !player.isFolded) {
+            game.forceRemovePlayer(socket.userId!);
+          }
+          tableManager.removeSocketId(tableId, socket.userId!);
+          socket.leave(tableId);
+          socket.currentTableId = undefined;
+          return;
+        }
+
+        // ── CHIP LEAK FIX (cash tables) ─────────────────────────────────────
         // player.chips  = remaining stack (includes winnings already credited)
         // player.currentBet = bet in the CURRENT betting round (not yet in pot)
         //

@@ -84,6 +84,8 @@ export interface TableInfo {
   phase: string;
   createdBy: string;
   occupiedSeats: number[];
+  isTournament?: boolean;
+  tournamentId?: string;
 }
 
 export interface ChatMessage {
@@ -91,6 +93,22 @@ export interface ChatMessage {
   username: string;
   message: string;
   timestamp: string;
+}
+
+export interface Tournament {
+  id: string;
+  name: string;
+  buy_in: number;
+  scheduled_at: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  starting_stack: number;
+  max_players: number;
+  status: 'scheduled' | 'running' | 'finished' | 'cancelled';
+  prize_pool: number;
+  table_id?: string | null;
+  winners?: Array<{ userId: string; username: string; position: number; prize: number }> | null;
+  registered_count?: number;
 }
 
 export interface Transaction {

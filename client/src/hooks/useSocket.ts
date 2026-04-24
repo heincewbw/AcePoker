@@ -5,6 +5,12 @@ import { useGameStore } from '../store/gameStore';
 import { GameState, ChatMessage } from '../types';
 import toast from 'react-hot-toast';
 
+function ordinalSuffix(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
 let socket: Socket | null = null;
 
 /** Emits table:leave then disconnects. Call before clearing auth state. */
@@ -73,6 +79,37 @@ export function useSocket() {
       toast.error(message || 'You have been signed out.', { duration: 6000 });
       // Force logout so user must re-authenticate
       logout();
+    });
+
+    socket.on('tournament:starting', ({ tournamentId, tableId, name, prizePool }: any) => {
+      toast.success(`🏆 ${name} is starting! Joining table…`, { duration: 5000 });
+      // Navigate through a custom event so any component can react. We use
+      // history API directly since react-router nav happens inside components.
+      window.dispatchEvent(new CustomEvent('tournament:starting', {
+        detail: { tournamentId, tableId, name, prizePool },
+      }));
+    });
+
+    socket.on('tournament:blind_up', ({ level, smallBlind, bigBlind }: any) => {
+      toast(`⬆ Blinds up — Level ${level} (${smallBlind}/${bigBlind})`, { icon: '🏆' });
+    });
+
+    socket.on('tournament:eliminated', ({ username, position }: any) => {
+      toast(`${username} eliminated (${position}${ordinalSuffix(position)} place)`, { icon: '💀' });
+    });
+
+    socket.on('tournament:finished', ({ winners, prizePool }: any) => {
+      const top = winners?.[0];
+      if (top) {
+        toast.success(
+          `🏆 Tournament winner: ${top.username} — ${top.prize} chips (prize pool ${prizePool})`,
+          { duration: 8000 }
+        );
+      }
+    });
+
+    socket.on('tournament:cancelled', () => {
+      toast.error('Tournament was cancelled — buy-in refunded', { duration: 6000 });
     });
 
     return () => {

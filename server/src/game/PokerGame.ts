@@ -88,6 +88,19 @@ export class PokerGame {
     this.onGameEnd = onGameEnd;
   }
 
+  /** Additional listeners (e.g. tournament manager) called alongside the main onGameEnd. */
+  private extraGameEndListeners: Array<(state: GameState) => void> = [];
+  addGameEndListener(listener: (state: GameState) => void): void {
+    this.extraGameEndListeners.push(listener);
+  }
+
+  /** Update blind levels mid-game (used by tournaments to raise blinds). */
+  setBlinds(smallBlind: number, bigBlind: number): void {
+    this.state.smallBlind = smallBlind;
+    this.state.bigBlind = bigBlind;
+    // minRaise is reset at each street; this keeps new hands aligned.
+  }
+
   getState(): GameState {
     return { ...this.state };
   }
@@ -467,6 +480,9 @@ export class PokerGame {
     this.state.phase = 'finished';
     this.emit();
     if (this.onGameEnd) this.onGameEnd(this.getState());
+    for (const listener of this.extraGameEndListeners) {
+      try { listener(this.getState()); } catch (err) { console.error('extra game-end listener error:', err); }
+    }
     // Reset to 'waiting' so canStartGame() allows the next round to start.
     this.state.phase = 'waiting';
   }

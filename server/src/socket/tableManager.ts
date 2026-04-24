@@ -13,6 +13,8 @@ export interface TableInfo {
   phase: string;
   createdBy: string;
   occupiedSeats: number[];
+  isTournament?: boolean;
+  tournamentId?: string;
 }
 
 export interface TableConfig {
@@ -51,7 +53,7 @@ class TableManager {
     }
   }
 
-  createTable(config: TableConfig): TableInfo {
+  createTable(config: TableConfig, opts?: { isTournament?: boolean; tournamentId?: string }): TableInfo {
     const id = uuidv4();
     const game = new PokerGame(id, config.smallBlind, config.bigBlind);
 
@@ -67,6 +69,8 @@ class TableManager {
       phase: 'waiting',
       createdBy: config.createdBy,
       occupiedSeats: [],
+      isTournament: opts?.isTournament,
+      tournamentId: opts?.tournamentId,
     };
 
     this.tables.set(id, { info, game, socketIds: new Map() });
@@ -94,15 +98,17 @@ class TableManager {
   }
 
   getAllTableInfos(): TableInfo[] {
-    return Array.from(this.tables.values()).map(t => {
-      const gameState = t.game.getState();
-      return {
-        ...t.info,
-        playerCount: gameState.players.length,
-        phase: gameState.phase,
-        occupiedSeats: gameState.players.map(p => p.seatIndex),
-      };
-    });
+    return Array.from(this.tables.values())
+      .filter(t => !t.info.isTournament)
+      .map(t => {
+        const gameState = t.game.getState();
+        return {
+          ...t.info,
+          playerCount: gameState.players.length,
+          phase: gameState.phase,
+          occupiedSeats: gameState.players.map(p => p.seatIndex),
+        };
+      });
   }
 
   addSocketId(tableId: string, userId: string, socketId: string): void {

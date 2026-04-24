@@ -9,6 +9,7 @@ import TableCard from './TableCard';
 import WalletModal from '../Wallet/WalletModal';
 import CreateTableModal from './CreateTableModal';
 import HistoryModal from './HistoryModal';
+import TournamentList from './TournamentList';
 import toast from 'react-hot-toast';
 
 export default function Lobby() {
@@ -17,6 +18,7 @@ export default function Lobby() {
   const [showWallet, setShowWallet] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [tab, setTab] = useState<'tables' | 'tournaments'>('tables');
 
   useEffect(() => {
     refreshUser();
@@ -139,30 +141,57 @@ export default function Lobby() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-white" style={{ fontFamily: 'Cinzel, serif' }}>
-              Live Tables
+              {tab === 'tables' ? 'Live Tables' : 'Tournaments'}
             </h2>
-            <p className="text-gray-500 text-sm mt-1">Choose a table and start playing</p>
+            <p className="text-gray-500 text-sm mt-1">
+              {tab === 'tables' ? 'Choose a table and start playing' : 'Daily scheduled MTT — 3 per day'}
+            </p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={() => refetch()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-gray-200 bg-white/5 hover:bg-white/10 transition-all"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </button>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #c9a227, #8b6e1a)' }}
-            >
-              <Plus className="w-4 h-4" />
-              Create Table
-            </button>
+            <div className="flex items-center rounded-xl bg-white/5 p-1">
+              <button
+                onClick={() => setTab('tables')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  tab === 'tables' ? 'bg-yellow-600 text-black' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                Tables
+              </button>
+              <button
+                onClick={() => setTab('tournaments')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  tab === 'tournaments' ? 'bg-yellow-600 text-black' : 'text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                Tournaments
+              </button>
+            </div>
+            {tab === 'tables' && (
+              <>
+                <button
+                  onClick={() => refetch()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-gray-200 bg-white/5 hover:bg-white/10 transition-all"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, #c9a227, #8b6e1a)' }}
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Table
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {isLoading ? (
+        {tab === 'tournaments' ? (
+          <TournamentList />
+        ) : isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="table-card p-6 animate-pulse">

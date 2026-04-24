@@ -11,8 +11,10 @@ import tableRoutes from './routes/tables';
 import userRoutes from './routes/users';
 import adminRoutes from './routes/admin';
 import gamesRoutes from './routes/games';
+import tournamentsRoutes from './routes/tournaments';
 import { setupSocketHandlers } from './socket/socketHandler';
 import { errorHandler } from './middleware/errorHandler';
+import { tournamentManager } from './game/tournamentManager';
 
 dotenv.config();
 
@@ -58,6 +60,7 @@ app.use('/api/tables', tableRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/games', gamesRoutes);
+app.use('/api/tournaments', tournamentsRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -65,6 +68,9 @@ app.get('/api/health', (_req, res) => {
 
 // Socket.io handlers
 setupSocketHandlers(io);
+
+// Tournament scheduler
+tournamentManager.init(io);
 
 // Error handler
 app.use(errorHandler);

@@ -287,7 +287,32 @@ export default function GameTable() {
   const handleAction = (action: PlayerAction, amount?: number) => {
     if (!tableId) return;
     sendAction(tableId, action, amount);
+    lastActivityRef.current = Date.now();
   };
+
+  // Auto-leave after 2 minutes of inactivity (missed turns / sitting out).
+  // Any action by the player resets the inactivity timer.
+  const lastActivityRef = useRef<number>(Date.now());
+  const [showInactiveWarn, setShowInactiveWarn] = useState(false);
+  useEffect(() => {
+    if (!hasJoined) return;
+    const INACTIVITY_MS = 2 * 60 * 1000; // 2 minutes
+    const WARN_MS = INACTIVITY_MS - 30 * 1000; // warn 30s before
+    const interval = setInterval(() => {
+      const idle = Date.now() - lastActivityRef.current;
+      if (idle >= INACTIVITY_MS) {
+        clearInterval(interval);
+        toast.error('Removed from table: inactive for 2 minutes');
+        handleLeave();
+      } else if (idle >= WARN_MS) {
+        setShowInactiveWarn(true);
+      } else {
+        setShowInactiveWarn(false);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [hasJoined]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const handleSendChat = (e: React.FormEvent) => {
     e.preventDefault();
@@ -460,6 +485,15 @@ export default function GameTable() {
               <span className="hidden md:inline">Leave next hand</span>
               <span className="md:hidden">Leave next</span>
             </label>
+          )}
+          {showInactiveWarn && (
+            <span
+              className="text-xs animate-pulse"
+              style={{ color: '#fbbf24' }}
+              title="You will be removed from the table soon due to inactivity"
+            >
+              ⚠ Inactive — auto-leave soon
+            </span>
           )}
           <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
           <div>

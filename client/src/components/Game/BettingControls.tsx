@@ -119,7 +119,7 @@ export default function BettingControls({ gameState, currentPlayer, onAction }: 
         {/* CHECK / CALL – teal circle (larger) */}
         <div className="flex flex-col items-center gap-1">
           <span style={{ color: '#86efac', fontSize: 11, fontWeight: 600 }}>
-            {canCheck ? 'Check' : `Call ${formatChips(callAmount)}`}
+            {canCheck ? 'Check' : 'Call'}
           </span>
           {canCheck ? (
             <button className="zynga-btn-check" onClick={handleCheck}>
@@ -129,9 +129,9 @@ export default function BettingControls({ gameState, currentPlayer, onAction }: 
             </button>
           ) : (
             <button className="zynga-btn-check" onClick={handleCall}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <span style={{ fontSize: 14, fontWeight: 800, fontFamily: 'Cinzel, serif', lineHeight: 1.1, textAlign: 'center' }}>
+                {formatChips(callAmount)}
+              </span>
             </button>
           )}
         </div>

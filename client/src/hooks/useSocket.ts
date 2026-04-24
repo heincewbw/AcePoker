@@ -33,7 +33,6 @@ export function disconnectSocket() {
 
 export function useSocket() {
   const token = useAuthStore((s) => s.token);
-  const logout = useAuthStore((s) => s.logout);
   const { setGameState, addChatMessage, setConnected, setShowWinner } = useGameStore();
   const mounted = useRef(false);
 
@@ -95,8 +94,15 @@ export function useSocket() {
       });
 
       socket.on('auth:kicked', ({ message }: { message: string }) => {
-        toast.error(message || 'You have been signed out.', { duration: 6000 });
-        logout();
+        // Show a soft warning but do NOT force logout automatically.  Network
+        // reconnects and server restarts can race with the single-session
+        // guard and produce false kicks.  If the user really did log in on
+        // another device, the old tab's socket will just stop receiving state
+        // updates; they can refresh or log out manually.
+        toast(message || 'Session replaced elsewhere.', {
+          icon: '⚠️',
+          duration: 4000,
+        });
       });
 
       socket.on('tournament:starting', ({ tournamentId, tableId, name, prizePool }: any) => {

@@ -50,12 +50,14 @@ export function setupSocketHandlers(io: Server): void {
     const existingSocketId = activeUserSockets.get(userId);
     if (existingSocketId && existingSocketId !== socket.id) {
       const existing = io.sockets.sockets.get(existingSocketId);
-      if (existing) {
+      if (existing && existing.connected) {
         existing.emit('auth:kicked', {
           message: 'Your account logged in from another location.',
         });
         existing.disconnect(true);
       }
+      // If the old socket is already gone (stale entry from a disconnect we
+      // haven't processed yet), just take over silently without emitting.
     }
     activeUserSockets.set(userId, socket.id);
 

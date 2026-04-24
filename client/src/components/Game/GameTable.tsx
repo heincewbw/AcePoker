@@ -815,7 +815,16 @@ export default function GameTable() {
       <div style={{ height: 0 }} />
 
       {/* ── BETTING CONTROLS (fixed bottom bar, Zynga style) ── */}
-      {isMyTurn && selfPlayer && gameState && (
+      {/* Only show when it IS this player's turn AND they have been dealt in
+          (hole cards present, not folded, active). Prevents buttons from
+          flashing for a player who just sat down mid-hand. */}
+      {isMyTurn && selfPlayer && gameState
+        && selfPlayer.isActive
+        && !selfPlayer.isFolded
+        && (selfPlayer.holeCards?.length ?? 0) > 0
+        && gameState.phase !== 'waiting'
+        && gameState.phase !== 'finished'
+        && gameState.phase !== 'showdown' && (
         <div style={{
           position: 'fixed',
           bottom: 0,
@@ -835,7 +844,12 @@ export default function GameTable() {
       )}
 
       {/* ── PRE-ACTION PANEL (fixed right side, Zynga-style while waiting) ── */}
-      {!isMyTurn && selfPlayer && !selfPlayer.isFolded && gameState?.phase !== 'waiting' && gameState?.phase !== 'finished' && (
+      {!isMyTurn && selfPlayer && !selfPlayer.isFolded
+        && selfPlayer.isActive
+        && (selfPlayer.holeCards?.length ?? 0) > 0
+        && gameState?.phase !== 'waiting'
+        && gameState?.phase !== 'finished'
+        && gameState?.phase !== 'showdown' && (
         <div style={{
           position: 'fixed',
           bottom: 0,

@@ -18,7 +18,7 @@ interface Props {
   onAutoFold?: () => void;
 }
 
-const TURN_SECONDS = 30;
+const TURN_SECONDS = 7;
 
 const ACTION_LABELS: Record<string, string> = {
   fold: 'Fold',
@@ -205,7 +205,7 @@ function TimerRing({ seconds, active, isSelf }: { seconds: number; active: boole
   const circ = 2 * Math.PI * radius;
   const pct = Math.max(0, seconds / TURN_SECONDS);
   const dashOffset = circ * (1 - pct);
-  const isUrgent = seconds <= 10 && seconds > 0;
+  const isUrgent = seconds <= 3 && seconds > 0;
   const trackColor = isSelf ? 'rgba(240,192,64,0.15)' : 'rgba(255,255,255,0.10)';
   const arcColor = isUrgent ? '#ef4444' : isSelf ? '#f0c040' : '#fb923c';
 
@@ -274,7 +274,7 @@ export default function PlayerSeat({ player, isCurrentTurn, isWinner, gameState,
           if (isSelf) onAutoFold?.();
           return 0;
         }
-        if (next <= 10 && isSelf) soundManager.urgentTick();
+        if (next <= 3 && isSelf) soundManager.urgentTick();
         return next;
       });
     }, 1000);

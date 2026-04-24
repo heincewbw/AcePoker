@@ -242,16 +242,18 @@ export default function GameTable() {
     const displaySeat = (winner.seatIndex - selfSeat + (tableInfo?.maxPlayers ?? 9)) % (tableInfo?.maxPlayers ?? 9);
     const { x, y } = getSeatOffset(displaySeat);
 
-    const newFlies = Array.from({ length: 6 }, (_, i) => ({
+    const CHIP_COUNT = 18;
+    const palette = ['#f0c040', '#fde68a', '#4ade80', '#f0c040', '#fbbf24', '#f0c040'];
+    const newFlies = Array.from({ length: CHIP_COUNT }, (_, i) => ({
       id: ++chipIdRef.current,
-      fromX: x + (Math.random() - 0.5) * 30,
-      fromY: y + (Math.random() - 0.5) * 20,
+      fromX: x + (Math.random() - 0.5) * 50,
+      fromY: y + (Math.random() - 0.5) * 32,
       toWinner: true,
-      color: ['#f0c040', '#f0c040', '#4ade80', '#f0c040', '#fde68a', '#f0c040'][i],
-      delay: i * 80,
+      color: palette[i % palette.length],
+      delay: i * 55,
     }));
     setChipFlies(prev => [...prev, ...newFlies]);
-    setTimeout(() => setChipFlies(prev => prev.filter(f => !newFlies.find(n => n.id === f.id))), 1400);
+    setTimeout(() => setChipFlies(prev => prev.filter(f => !newFlies.find(n => n.id === f.id))), 2400);
   }, [showWinner]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleJoin = () => {
@@ -268,6 +270,19 @@ export default function GameTable() {
     clearGame();
     navigate('/');
   };
+
+  // Leave next hand: when enabled, automatically leave as soon as current hand
+  // ends (phase becomes waiting/finished) so the player won't be dealt in or
+  // post blinds for the next round.
+  const [leaveNextHand, setLeaveNextHand] = useState(false);
+  useEffect(() => {
+    if (!leaveNextHand) return;
+    const phase = gameState?.phase;
+    // Leave immediately if between hands, otherwise wait for hand to end.
+    if (!phase || phase === 'waiting' || phase === 'finished') {
+      handleLeave();
+    }
+  }, [leaveNextHand, gameState?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAction = (action: PlayerAction, amount?: number) => {
     if (!tableId) return;
@@ -430,6 +445,22 @@ export default function GameTable() {
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Leave</span>
           </button>
+          {selfPlayer && (
+            <label
+              className="flex items-center gap-1.5 text-xs cursor-pointer select-none"
+              style={{ color: leaveNextHand ? '#f87171' : '#9ca3af' }}
+              title="Automatically leave after this hand ends"
+            >
+              <input
+                type="checkbox"
+                checked={leaveNextHand}
+                onChange={(e) => setLeaveNextHand(e.target.checked)}
+                className="accent-red-500 cursor-pointer"
+              />
+              <span className="hidden md:inline">Leave next hand</span>
+              <span className="md:hidden">Leave next</span>
+            </label>
+          )}
           <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
           <div>
             <div style={{ fontFamily: 'Cinzel, serif', color: '#f0c040', fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
@@ -594,18 +625,20 @@ export default function GameTable() {
                   style={{
                     position: 'absolute',
                     left: '50%', top: '50%',
-                    width: 16, height: 16,
-                    marginLeft: -8, marginTop: -8,
+                    width: fly.toWinner ? 22 : 16,
+                    height: fly.toWinner ? 22 : 16,
+                    marginLeft: fly.toWinner ? -11 : -8,
+                    marginTop: fly.toWinner ? -11 : -8,
                     borderRadius: '50%',
                     background: fly.color,
-                    border: '2px solid rgba(255,255,255,0.45)',
-                    boxShadow: `0 0 10px ${fly.color}, 0 0 4px rgba(0,0,0,0.5)`,
+                    border: '2px solid rgba(255,255,255,0.55)',
+                    boxShadow: `0 0 14px ${fly.color}, 0 0 4px rgba(0,0,0,0.5)`,
                     zIndex: 50,
                     pointerEvents: 'none',
                     ['--fx' as string]: `${fly.fromX}px`,
                     ['--fy' as string]: `${fly.fromY}px`,
                     animation: fly.toWinner
-                      ? `chipFlyFromCenter 0.85s ${fly.delay}ms cubic-bezier(0.34,1.56,0.64,1) both`
+                      ? `chipFlyFromCenter 1.15s ${fly.delay}ms cubic-bezier(0.34,1.4,0.64,1) both`
                       : `chipFlyToCenter 0.7s ${fly.delay}ms cubic-bezier(0.4,0,0.2,1) both`,
                   } as React.CSSProperties}
                 />

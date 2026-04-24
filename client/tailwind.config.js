@@ -106,8 +106,9 @@ export default {
         // Chip flies from pot → winner seat
         chipFlyFromCenter: {
           '0%':   { transform: 'translate(0px, 0px) scale(0.5)', opacity: '0' },
-          '15%':  { opacity: '1', transform: 'translate(calc(var(--fx) * 0.1), calc(var(--fy) * 0.1)) scale(1.5)' },
-          '100%': { transform: 'translate(var(--fx), var(--fy)) scale(0.8)', opacity: '0' },
+          '10%':  { opacity: '1', transform: 'translate(calc(var(--fx) * 0.08), calc(var(--fy) * 0.08)) scale(1.6)' },
+          '70%':  { opacity: '1', transform: 'translate(var(--fx), var(--fy)) scale(1.1)' },
+          '100%': { opacity: '0', transform: 'translate(var(--fx), var(--fy)) scale(0.6)' },
         },
         // Moving felt sheen
         feltSheen: {

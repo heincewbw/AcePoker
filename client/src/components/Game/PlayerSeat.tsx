@@ -18,7 +18,7 @@ interface Props {
   onAutoFold?: () => void;
 }
 
-const TURN_SECONDS = 7;
+const TURN_SECONDS = 12;
 
 const ACTION_LABELS: Record<string, string> = {
   fold: 'Fold',

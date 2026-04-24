@@ -18,6 +18,7 @@ export function disconnectSocket() {
 
 export function useSocket() {
   const token = useAuthStore((s) => s.token);
+  const logout = useAuthStore((s) => s.logout);
   const { setGameState, addChatMessage, setConnected, setShowWinner } = useGameStore();
   const initialized = useRef(false);
 
@@ -66,6 +67,12 @@ export function useSocket() {
 
     socket.on('error', ({ message }: { message: string }) => {
       toast.error(message);
+    });
+
+    socket.on('auth:kicked', ({ message }: { message: string }) => {
+      toast.error(message || 'You have been signed out.', { duration: 6000 });
+      // Force logout so user must re-authenticate
+      logout();
     });
 
     return () => {

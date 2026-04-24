@@ -11,6 +11,10 @@ interface AuthSocket extends Socket {
   currentTableId?: string;
 }
 
+// Track one active socket per user. If a second connection arrives with the
+// same userId, the older socket is disconnected so only one session is live.
+const activeUserSockets = new Map<string, string>(); // userId → socketId
+
 export function setupSocketHandlers(io: Server): void {
   // Supabase auth middleware for socket
   io.use(async (socket: AuthSocket, next) => {
@@ -39,6 +43,21 @@ export function setupSocketHandlers(io: Server): void {
 
   io.on('connection', (socket: AuthSocket) => {
     console.log(`🔌 ${socket.username} connected [${socket.id}]`);
+
+    // Enforce single active session per user. If the same user already has a
+    // connected socket, kick the old one — the latest login wins.
+    const userId = socket.userId!;
+    const existingSocketId = activeUserSockets.get(userId);
+    if (existingSocketId && existingSocketId !== socket.id) {
+      const existing = io.sockets.sockets.get(existingSocketId);
+      if (existing) {
+        existing.emit('auth:kicked', {
+          message: 'Your account logged in from another location.',
+        });
+        existing.disconnect(true);
+      }
+    }
+    activeUserSockets.set(userId, socket.id);
 
     // ----- TABLE EVENTS -----
 
@@ -296,6 +315,11 @@ export function setupSocketHandlers(io: Server): void {
 
     socket.on('disconnect', async () => {
       console.log(`🔌 ${socket.username} disconnected`);
+      // Only clear the map if this socket is the currently-tracked one.
+      // If a newer login took over, the map already points at that newer socket.
+      if (socket.userId && activeUserSockets.get(socket.userId) === socket.id) {
+        activeUserSockets.delete(socket.userId);
+      }
       await handleLeaveTable(socket, io);
     });
   });

@@ -127,7 +127,7 @@ export default function GameTable() {
     if (!tableId) return;
     api.get(`/tables/${tableId}`).then(({ data }) => {
       setTableInfo(data);
-      setBuyIn(Math.min(data.minBuyIn * 10, data.maxBuyIn));
+      setBuyIn(data.bigBlind * 100);
       setCurrentTableId(tableId);
       // Auto-select first free seat based on live occupiedSeats from server
       const occupied: number[] = data.occupiedSeats ?? [];
@@ -446,12 +446,12 @@ export default function GameTable() {
           {/* Buy-in slider */}
           <div className="mb-6">
             <label className="text-gray-400 text-sm block mb-2">
-              Buy-in ({formatChips(tableInfo.minBuyIn)} â€“ {formatChips(tableInfo.maxBuyIn)})
+              Buy-in ({formatChips(tableInfo.minBuyIn)} – {formatChips(tableInfo.bigBlind * 100)})
             </label>
             <input
               type="range"
               min={tableInfo.minBuyIn}
-              max={Math.min(tableInfo.maxBuyIn, user?.chips || 0)}
+              max={Math.min(tableInfo.bigBlind * 100, user?.chips || 0)}
               step={tableInfo.bigBlind}
               value={buyIn}
               onChange={e => setBuyIn(+e.target.value)}

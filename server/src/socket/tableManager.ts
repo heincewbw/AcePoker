@@ -42,10 +42,10 @@ class TableManager {
 
   private seedDefaultTables() {
     const defaults: Omit<TableConfig, 'createdBy'>[] = [
-      { name: '🎯 Low Stakes', smallBlind: 250, bigBlind: 500, maxPlayers: 6, minBuyIn: 5000, maxBuyIn: 500000 },
-      { name: '💎 Medium Stakes', smallBlind: 1000, bigBlind: 2000, maxPlayers: 6, minBuyIn: 20000, maxBuyIn: 2000000 },
-      { name: '🔥 High Stakes', smallBlind: 5000, bigBlind: 10000, maxPlayers: 6, minBuyIn: 100000, maxBuyIn: 10000000 },
-      { name: '🏆 VIP Table', smallBlind: 25000, bigBlind: 50000, maxPlayers: 9, minBuyIn: 500000, maxBuyIn: 50000000 },
+      { name: '🎯 Low Stakes',   smallBlind:   250, bigBlind:   500, maxPlayers: 6, minBuyIn:   500, maxBuyIn:   50000 },
+      { name: '💎 Medium Stakes', smallBlind:  1000, bigBlind:  2000, maxPlayers: 6, minBuyIn:  2000, maxBuyIn:  200000 },
+      { name: '🔥 High Stakes',   smallBlind:  5000, bigBlind: 10000, maxPlayers: 6, minBuyIn: 10000, maxBuyIn: 1000000 },
+      { name: '🏆 VIP Table',     smallBlind: 25000, bigBlind: 50000, maxPlayers: 9, minBuyIn: 50000, maxBuyIn: 5000000 },
     ];
 
     for (const d of defaults) {

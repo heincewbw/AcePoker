@@ -158,9 +158,10 @@ export function setupSocketHandlers(io: Server): void {
           return;
         }
 
-        if (buyIn < info.minBuyIn || buyIn > info.maxBuyIn) {
+        const effectiveMax = info.bigBlind * 100;
+        if (buyIn < info.minBuyIn || buyIn > effectiveMax) {
           socket.emit('error', {
-            message: `Buy-in must be between ${info.minBuyIn} and ${info.maxBuyIn} chips`,
+            message: `Buy-in must be between ${info.minBuyIn} and ${effectiveMax} chips (max = 100× big blind)`,
           });
           return;
         }

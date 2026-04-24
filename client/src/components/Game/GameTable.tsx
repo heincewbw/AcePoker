@@ -184,7 +184,7 @@ export default function GameTable() {
     if (!justBecameMyTurn || !selfPlayer || !gameState || !tableId) return;
 
     // Sitting out: immediately fold/check without waiting for the timer
-    if (isSittingOut) {
+    if (isSittingOutRef.current) {
       const canCheck = gameState.currentBet === selfPlayer.currentBet;
       sendAction(tableId, canCheck ? 'check' : 'fold');
       return;
@@ -313,6 +313,7 @@ export default function GameTable() {
     if (!tableId) return;
     sendAction(tableId, action, amount);
     lastActivityRef.current = Date.now();
+    isSittingOutRef.current = false;
     setIsSittingOut(false);
     sitOutStartRef.current = null;
     setShowInactiveWarn(false);
@@ -326,6 +327,8 @@ export default function GameTable() {
   const lastActivityRef = useRef<number>(Date.now());
   const [showInactiveWarn, setShowInactiveWarn] = useState(false);
   const [isSittingOut, setIsSittingOut] = useState(false);
+  // Ref mirrors state so effects with limited deps always see the current value
+  const isSittingOutRef = useRef(false);
   const sitOutStartRef = useRef<number | null>(null);
 
   const INACTIVE_SITOUT_MS = 2 * 60 * 1000;  // 2 min → sit out
@@ -339,6 +342,7 @@ export default function GameTable() {
 
       if (!isSittingOut) {
         if (idle >= INACTIVE_SITOUT_MS) {
+          isSittingOutRef.current = true;
           setIsSittingOut(true);
           sitOutStartRef.current = Date.now();
           toast('Sitting out due to inactivity — you will leave in 3 minutes', {
@@ -537,6 +541,7 @@ export default function GameTable() {
           {isSittingOut && (
             <button
               onClick={() => {
+                isSittingOutRef.current = false;
                 setIsSittingOut(false);
                 sitOutStartRef.current = null;
                 lastActivityRef.current = Date.now();
@@ -852,9 +857,10 @@ export default function GameTable() {
                   position={pos}
                   isSelf={player.userId === user?.id}
                   onAutoFold={player.userId === user?.id ? () => {
-                    handleAction('fold');
-                    // Immediately enter sit-out so next hands are skipped
-                    // until the player clicks an action themselves.
+                    // Send fold directly — bypass handleAction so it doesn't reset sit-out
+                    if (tableId) sendAction(tableId, 'fold');
+                    // Enter sit-out; timer won't wait next round, effect reads ref
+                    isSittingOutRef.current = true;
                     setIsSittingOut(true);
                     sitOutStartRef.current = Date.now();
                     toast('Sitting out — click any action to return', { icon: '💤', duration: 4000 });

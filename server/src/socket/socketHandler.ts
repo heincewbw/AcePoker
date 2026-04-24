@@ -248,85 +248,16 @@ export function setupSocketHandlers(io: Server): void {
                   // ── PERSIST the game itself so every hand has a permanent record ──
                   await recordGame(finalState);
 
-                  // ── PERSIST WINNERS to DB immediately ─────────────────
-                  // Winner chips are already updated in-memory by PokerGame.
-                  // Persist them now so a crash/disconnect doesn't lose chips.
-                  if (finalState.winners) {
-                    for (const winner of finalState.winners) {
-                      const winnerPlayer = finalState.players.find(
-                        p => p.id === winner.playerId
-                      );
-                      if (!winnerPlayer) continue;
+                  // ── Table chips are tracked purely in-memory by PokerGame ──
+                  // profiles.chips = lobby balance (chips NOT at any table).
+                  // It only changes on buy-in (deducted) and table leave (added back).
+                  // We do NOT flush winner chips to profiles.chips here — doing so
+                  // would merge lobby balance with table chips, causing inflated stacks
+                  // on the next resync.  handleLeaveTable is the single point where
+                  // table chips are credited back to the lobby balance.
 
-                      // Read current DB balance first to avoid race conditions
-                      const { data: wp } = await supabase
-                        .from('profiles')
-                        .select('chips, username')
-                        .eq('id', winnerPlayer.userId)
-                        .single();
-                      if (!wp) continue;
-
-                      const newBal = wp.chips + winnerPlayer.chips;
-                      await supabase
-                        .from('profiles')
-                        .update({ chips: newBal })
-                        .eq('id', winnerPlayer.userId);
-
-                      // Zero in-memory so handleLeaveTable doesn't double-credit.
-                      // Chips will be resynced from DB inside the setTimeout below
-                      // before the next round starts.
-                      winnerPlayer.chips = 0;
-
-                      await logChipChange({
-                        userId:       winnerPlayer.userId,
-                        username:     wp.username,
-                        event:        'win',
-                        amount:       winner.amount,
-                        balanceAfter: newBal,
-                        tableId:      tableId,
-                        gameId:       finalState.id,
-                        roundNumber:  finalState.roundNumber,
-                        detail:       `Won ${winner.amount} chips${
-                          winner.hand ? ` with ${winner.hand.description}` : ''
-                        }`,
-                      });
-                    }
-
-                    // ── LOG LOSSES for players who lost chips ──
-                    for (const p of finalState.players) {
-                      if (finalState.winners!.some(w => w.playerId === p.id)) continue;
-                      if (p.chips > 0) continue; // still has chips, logged on leave
-                      const { data: lp } = await supabase
-                        .from('profiles')
-                        .select('chips, username')
-                        .eq('id', p.userId)
-                        .single();
-                      if (!lp) continue;
-                      await logChipChange({
-                        userId:       p.userId,
-                        username:     lp.username,
-                        event:        'lose',
-                        amount:       0,
-                        balanceAfter: lp.chips,
-                        tableId:      tableId,
-                        gameId:       finalState.id,
-                        roundNumber:  finalState.roundNumber,
-                        detail:       `Lost hand — chips remaining in stack: ${p.chips}`,
-                      });
-                    }
-                  }
-
-                  // Schedule next game — resync ALL player chips from DB first
-                  // so winner chips (persisted above) are accurate in-memory.
-                  setTimeout(async () => {
-                    for (const p of game.getState().players) {
-                      const { data: prof } = await supabase
-                        .from('profiles')
-                        .select('chips')
-                        .eq('id', p.userId)
-                        .single();
-                      if (prof != null) game.updatePlayerChips(p.userId, prof.chips);
-                    }
+                  // Schedule next hand — in-memory chips are already correct.
+                  setTimeout(() => {
                     if (game.canStartGame()) {
                       game.startGame();
                     }

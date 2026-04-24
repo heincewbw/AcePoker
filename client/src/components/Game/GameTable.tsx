@@ -181,10 +181,19 @@ export default function GameTable() {
   useEffect(() => {
     const justBecameMyTurn = isMyTurn && !prevIsMyTurnRef.current;
     prevIsMyTurnRef.current = !!isMyTurn;
-    if (!justBecameMyTurn || !pendingAction || !selfPlayer || !gameState || !tableId) return;
+    if (!justBecameMyTurn || !selfPlayer || !gameState || !tableId) return;
+
+    // Sitting out: immediately fold/check without waiting for the timer
+    if (isSittingOut) {
+      const canCheck = gameState.currentBet === selfPlayer.currentBet;
+      sendAction(tableId, canCheck ? 'check' : 'fold');
+      return;
+    }
+
+    if (!pendingAction) return;
     const canCheck = gameState.currentBet === selfPlayer.currentBet;
     let action: PlayerAction | null = null;
-    if (pendingAction === 'fold')       action = 'fold';
+    if (pendingAction === 'fold')            action = 'fold';
     else if (pendingAction === 'call')       action = canCheck ? 'check' : 'call';
     else if (pendingAction === 'check_fold') action = canCheck ? 'check' : 'fold';
     if (action) { sendAction(tableId, action); }
@@ -526,12 +535,19 @@ export default function GameTable() {
             </label>
           )}
           {isSittingOut && (
-            <span
-              className="text-xs animate-pulse"
-              style={{ color: '#f87171' }}
+            <button
+              onClick={() => {
+                setIsSittingOut(false);
+                sitOutStartRef.current = null;
+                lastActivityRef.current = Date.now();
+                setShowInactiveWarn(false);
+                toast.success('Welcome back!', { duration: 2000 });
+              }}
+              className="text-xs px-3 py-1 rounded-lg animate-pulse"
+              style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', color: '#f87171' }}
             >
-              💤 Sitting out — leaving in 3 min
-            </span>
+              💤 Sitting out — click to return
+            </button>
           )}
           {!isSittingOut && showInactiveWarn && (
             <span
@@ -857,10 +873,12 @@ export default function GameTable() {
       {/* ── BETTING CONTROLS (fixed bottom bar, Zynga style) ── */}
       {/* Only show when it IS this player's turn AND they have been dealt in
           (hole cards present, not folded, active). Prevents buttons from
-          flashing for a player who just sat down mid-hand. */}
+          flashing for a player who just sat down mid-hand.
+          Hidden when sitting out — actions are auto-executed instead. */}
       {isMyTurn && selfPlayer && gameState
         && selfPlayer.isActive
         && !selfPlayer.isFolded
+        && !isSittingOut
         && (selfPlayer.holeCards?.length ?? 0) > 0
         && gameState.phase !== 'waiting'
         && gameState.phase !== 'finished'

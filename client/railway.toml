@@ -1,6 +1,7 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
+buildArgs = { VITE_SERVER_URL = "${{VITE_SERVER_URL}}", VITE_SUPABASE_URL = "${{VITE_SUPABASE_URL}}", VITE_SUPABASE_ANON_KEY = "${{VITE_SUPABASE_ANON_KEY}}", VITE_USE_TESTNET = "${{VITE_USE_TESTNET}}" }
 
 [deploy]
 startCommand = "npm start"

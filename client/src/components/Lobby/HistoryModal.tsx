@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { X, Trophy, TrendingDown, ChevronLeft, ChevronRight, Clock, Users, Coins } from 'lucide-react';
 import api from '../../utils/api';
 
@@ -61,7 +61,7 @@ export default function HistoryModal({ onClose }: { onClose: () => void }) {
       const { data } = await api.get(`/games/history?limit=${LIMIT}&page=${page}`);
       return data as { rows: GameRow[]; total: number; page: number; limit: number };
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   const totalPages = data ? Math.ceil(data.total / LIMIT) : 1;

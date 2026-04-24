@@ -117,6 +117,9 @@ export default function GameTable() {
     id: number; fromX: number; fromY: number; toWinner: boolean; color: string; delay: number;
   }>>([]);
 
+  // Pot fly: tracks where the pot label should animate to when a winner is declared
+  const [potFly, setPotFly] = useState<{ x: number; y: number; active: boolean } | null>(null);
+
   // Derived: current player identity (needed by effects below)
   const selfPlayer = gameState?.players.find(p => p.userId === user?.id);
   const currentTurnPlayer = gameState?.players[gameState?.currentPlayerIndex ?? -1];
@@ -256,6 +259,10 @@ export default function GameTable() {
     const selfSeat = selfPlayer?.seatIndex ?? 0;
     const displaySeat = (winner.seatIndex - selfSeat + (tableInfo?.maxPlayers ?? 9)) % (tableInfo?.maxPlayers ?? 9);
     const { x, y } = getSeatOffset(displaySeat);
+
+    // Pot pill flies to winner seat
+    setPotFly({ x, y, active: true });
+    setTimeout(() => setPotFly(null), 1400);
 
     const CHIP_COUNT = 28;
     const palette = ['#f0c040', '#fde68a', '#4ade80', '#f0c040', '#fbbf24', '#f0c040', '#facc15', '#86efac'];
@@ -673,9 +680,21 @@ export default function GameTable() {
                   zIndex: 10,
                 }}
               >
-                {/* Pot */}
-                {gameState && gameState.pot > 0 && (
-                  <div className="pot-display">
+                {/* Pot — flies to winner on showdown */}
+                {gameState && (gameState.pot > 0 || potFly) && (
+                  <div
+                    className="pot-display"
+                    style={potFly ? {
+                      transform: `translate(${potFly.x}px, ${potFly.y}px) scale(1.25)`,
+                      opacity: 0,
+                      transition: 'transform 1.1s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease 0.7s',
+                      pointerEvents: 'none',
+                    } : {
+                      transform: 'translate(0px, 0px) scale(1)',
+                      opacity: 1,
+                      transition: 'transform 0.3s, opacity 0.3s',
+                    }}
+                  >
                     🪙 POT: {formatChips(animatedPot)}
                   </div>
                 )}

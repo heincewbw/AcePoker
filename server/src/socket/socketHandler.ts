@@ -371,6 +371,20 @@ export function setupSocketHandlers(io: Server): void {
       }
     });
 
+    socket.on('player:post_bb', ({ tableId }: { tableId: string }) => {
+      const game = tableManager.getGame(tableId);
+      if (!game || !socket.userId) return;
+      game.postBBToReturn(socket.userId);
+      io.to(tableId).emit('game:state', game.getPublicState());
+      // Start next hand if enough active players and no hand in progress
+      if (game.canStartGame()) {
+        setTimeout(() => {
+          if (!game.canStartGame()) return;
+          game.startGame();
+        }, 1500);
+      }
+    });
+
     // ----- GAME ACTIONS -----
 
     socket.on('game:action', ({ tableId, action, amount }: { tableId: string; action: PlayerAction; amount?: number }) => {

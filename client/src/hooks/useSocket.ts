@@ -176,6 +176,9 @@ export function useSocket() {
     returnFromSitOut: (tableId: string) => {
       socket?.emit('player:return', { tableId });
     },
+    postBBToReturn: (tableId: string) => {
+      socket?.emit('player:post_bb', { tableId });
+    },
     isConnected: socket?.connected ?? false,
   };
 }

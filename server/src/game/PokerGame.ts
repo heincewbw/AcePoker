@@ -38,6 +38,7 @@ export interface GamePlayer {
   isAllIn: boolean;
   isActive: boolean;
   isSittingOut: boolean;
+  pendingPostBB: boolean;   // player paid to rejoin; posts live BB next hand
   seatIndex: number;
   isDealer: boolean;
   isSmallBlind: boolean;
@@ -160,6 +161,7 @@ export class PokerGame {
       isAllIn: false,
       isActive: true,
       isSittingOut: false,
+      pendingPostBB: false,
       seatIndex,
       isDealer: false,
       isSmallBlind: false,
@@ -177,8 +179,18 @@ export class PokerGame {
     const player = this.state.players.find(p => p.userId === userId);
     if (player) {
       player.isSittingOut = value;
+      if (value) player.pendingPostBB = false; // cancel any pending post if going back out
       this.emit();
     }
+  }
+
+  /** Player chooses to post a live big blind to re-enter next hand from sit-out. */
+  postBBToReturn(userId: string): void {
+    const player = this.state.players.find(p => p.userId === userId);
+    if (!player) return;
+    player.isSittingOut = false;
+    player.pendingPostBB = true;
+    this.emit();
   }
 
   removePlayer(userId: string): void {
@@ -219,7 +231,9 @@ export class PokerGame {
   }
 
   canStartGame(): boolean {
-    const activePlayers = this.state.players.filter(p => p.isActive && !p.isSittingOut && p.chips >= this.state.bigBlind);
+    const activePlayers = this.state.players.filter(
+      p => p.isActive && !p.isSittingOut && p.chips >= this.state.bigBlind
+    );
     return activePlayers.length >= 2 && ['waiting', 'finished'].includes(this.state.phase);
   }
 
@@ -296,6 +310,18 @@ export class PokerGame {
       userId: bbPlayer.userId, username: bbPlayer.username,
       action: 'bigBlind', amount: this.state.bigBlind, ts: Date.now(),
     });
+
+    // Post live big blinds for players returning from sit-out
+    for (const rp of activePlayers) {
+      if (!rp.pendingPostBB || rp.isSmallBlind || rp.isBigBlind) continue;
+      this.placeBet(rp, this.state.bigBlind);
+      rp.pendingPostBB = false;
+      this.state.actionHistory.push({
+        type: 'blind', phase: 'preflop',
+        userId: rp.userId, username: rp.username,
+        action: 'bigBlind', amount: this.state.bigBlind, ts: Date.now(),
+      });
+    }
 
     // Deal hole cards
     for (let i = 0; i < 2; i++) {

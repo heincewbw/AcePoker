@@ -90,7 +90,7 @@ export default function GameTable() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuthStore();
   const { gameState, chatMessages, showWinner, setCurrentTableId, clearGame } = useGameStore();
-  const { joinTable, leaveTable, sendAction, sendChat, sitOut, returnFromSitOut, isConnected } = useSocket();
+  const { joinTable, leaveTable, sendAction, sendChat, sitOut, returnFromSitOut, postBBToReturn, isConnected } = useSocket();
 
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [buyInModal, setBuyInModal] = useState(true);
@@ -321,6 +321,7 @@ export default function GameTable() {
     sendAction(tableId, action, amount);
     lastActivityRef.current = Date.now();
     if (isSittingOutRef.current) {
+      // Player acted manually while sitting out — free return, no BB needed
       returnFromSitOut(tableId);
     }
     isSittingOutRef.current = false;
@@ -550,21 +551,40 @@ export default function GameTable() {
             </label>
           )}
           {isSittingOut && (
-            <button
-              onClick={() => {
-                isSittingOutRef.current = false;
-                setIsSittingOut(false);
-                sitOutStartRef.current = null;
-                lastActivityRef.current = Date.now();
-                setShowInactiveWarn(false);
-                if (tableId) returnFromSitOut(tableId);
-                toast.success('Welcome back!', { duration: 2000 });
-              }}
-              className="text-xs px-3 py-1 rounded-lg animate-pulse"
-              style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.4)', color: '#f87171' }}
-            >
-              💤 Sitting out — click to return
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Primary: post live BB to be dealt in immediately next hand */}
+              <button
+                onClick={() => {
+                  isSittingOutRef.current = false;
+                  setIsSittingOut(false);
+                  sitOutStartRef.current = null;
+                  lastActivityRef.current = Date.now();
+                  setShowInactiveWarn(false);
+                  if (tableId) postBBToReturn(tableId);
+                  toast.success(`Posting ${formatChips(tableInfo?.bigBlind ?? 0)} BB — you're back next hand!`, { duration: 3000 });
+                }}
+                className="text-xs px-3 py-1 rounded-lg font-semibold"
+                style={{ background: 'rgba(240,192,64,0.18)', border: '1px solid rgba(240,192,64,0.5)', color: '#f0c040' }}
+              >
+                ▶ Post {formatChips(tableInfo?.bigBlind ?? 0)} BB to Join
+              </button>
+              {/* Secondary: free return — wait for natural blind position */}
+              <button
+                onClick={() => {
+                  isSittingOutRef.current = false;
+                  setIsSittingOut(false);
+                  sitOutStartRef.current = null;
+                  lastActivityRef.current = Date.now();
+                  setShowInactiveWarn(false);
+                  if (tableId) returnFromSitOut(tableId);
+                  toast.success('Welcome back!', { duration: 2000 });
+                }}
+                className="text-xs px-2 py-1 rounded-lg"
+                style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171' }}
+              >
+                💤 Sit Out
+              </button>
+            </div>
           )}
           {!isSittingOut && showInactiveWarn && (
             <span
